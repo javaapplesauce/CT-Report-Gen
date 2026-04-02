@@ -157,7 +157,8 @@ class CTReportDataset(Dataset):
             if label:
                 self.samples.append({"pt_path": pt_path, "label": label})
 
-        print(f"CTReportDataset: {len(self.samples)} samples.")
+        if os.environ.get("LOCAL_RANK", "0") == "0":
+            print(f"CTReportDataset: {len(self.samples)} samples.")
 
     def __len__(self) -> int:
         return len(self.samples)
@@ -349,7 +350,7 @@ def train():
             # attention_mask: (B, V+T)
             # labels       : (B, V+T)   -100 for visual + padding positions
 
-            with accelerator.accumulate(model):
+            with accelerator.accumulate(model, projector):
                 # 1. Project CT features → LLM embedding space
                 #    Cast projector output to the LLM's working dtype (bfloat16).
                 visual_embeds = projector(visual_feats).to(model.dtype)  # (B, V, D)
@@ -382,7 +383,7 @@ def train():
                 scheduler.step()
                 optimizer.zero_grad()
 
-            running_loss  += loss.detach().float()
+            running_loss  += accelerator.reduce(loss.detach(), reduction="mean").float()
             running_steps += 1
             global_step   += 1
 
