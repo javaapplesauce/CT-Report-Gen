@@ -1,0 +1,17 @@
+.env
+/.claude
+/node_modules
+/models
+/model_weights
+/CT-CLIP/
+/.venv
+/data
+/checkpoints
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS
+.DS_Store
